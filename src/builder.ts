@@ -16,9 +16,15 @@ interface Params {
   [k: string]: boolean | number | string | undefined
 }
 
+export interface Position {
+  x: number
+  y: number
+  z: number
+}
+
 export default class Builder {
   private lines: string[] = []
-  private config: any
+  protected config: any
 
   constructor(config?: any) {
     // TODO(ibash) strongly type the config
