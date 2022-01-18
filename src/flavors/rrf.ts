@@ -53,12 +53,21 @@ export function Rrf<TBase extends Buildable>(Base: TBase) {
       return this
     }
 
-    setTemperature(temperature: number, tool?: number) {
-      this.out('G10', { s: temperature, p: tool })
+    setTemperature(options: { temperature: number; tool?: number }): this
+    setTemperature(temperature: number): this
+    setTemperature(temperatureOrOptions: any, tool?: number) {
+      if (typeof temperatureOrOptions === 'number') {
+        const temperature = temperatureOrOptions
+        this.out('G10', { s: temperature, p: tool })
+      } else {
+        const { temperature, tool } = temperatureOrOptions
+        this.out('G10', { s: temperature, p: tool })
+      }
       return this
     }
 
-    waitForTemperature(tool?: number) {
+    waitForTemperature(options?: { tool: number }) {
+      const { tool } = options ?? {}
       this.out('M116', { p: tool })
       return this
     }
@@ -69,6 +78,11 @@ export function Rrf<TBase extends Buildable>(Base: TBase) {
 
     extrude(amount: number, speed?: number) {
       return this.move({ e: amount, f: speed })
+    }
+
+    display(message: string) {
+      this.out(`M117 "${message}"`)
+      return this
     }
   }
 }

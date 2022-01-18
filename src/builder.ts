@@ -22,6 +22,11 @@ export default class Builder {
 
   constructor(config?: any) {
     // TODO(ibash) strongly type the config
+    // some things I want in the config
+    // 1. speeds: travel speed, retraction speed, etc
+    // 2. build plate size (min/max x, y, z)
+    // 3. flavor: to auto construct a builder for the user
+    // 4. dry run: automatically skip any temperature setting and extrusions, just move.
     this.config = config || {}
   }
 
@@ -85,5 +90,11 @@ export default class Builder {
     return this
   }
 
-  append(other: Builder) {}
+  // TODO(ibash) want to be able to take in a pre-sliced gcode here too... would
+  // be especially cool to programatically change a gcode, for example by
+  // changing the z height by some amount (to construct a temperature tower for
+  // example)
+  append(other: Builder) {
+    this.lines.push(...other.lines)
+  }
 }

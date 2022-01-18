@@ -1,5 +1,6 @@
-import fs from 'fs'
 import Builder from '~/builder'
+import fs from 'fs'
+import path from 'path'
 import { Rrf } from '~/flavors/rrf'
 
 const ExtendedBuilder = Rrf(Builder)
@@ -9,13 +10,16 @@ const builder = new ExtendedBuilder()
 builder
   .home()
   .speed(50 * 60)
-  .move({ x: 10, y: 10, z: 20 })
+  .move({ x: 10, y: 10, z: 50 })
   .exec(
     `
     G21 ; set units to millimeters
     G90 ; absolute cooridinates
     M83 ; relative distances for extrusion`
   )
+  // the filament gets dragged around the bed, hopefully this helps
+  .setBedTemperature(60)
+  .waitForBedTemperature(60)
   .tool(0)
 
 const temperatures = [215, 220, 225, 230, 235]
@@ -23,17 +27,38 @@ const temperatures = [215, 220, 225, 230, 235]
 // volumetric flow rates in mm^3/s
 const rates = [3, 6, 9, 12, 15]
 
+const limits = {
+  x: { min: 0, max: 288 },
+  y: { min: 0, max: 305 }
+}
+
+const positions = {
+  prime: { x: limits.x.max - 10, y: limits.y.max, z: 0.2 }
+}
+
+const speeds = {
+  retraction: 35 * 60,
+  travel: 50 * 60
+}
+
 // weight = pi * (1.75/2)^2 * 50 * 1.25
 // where density is 1.25 g/cm^3
 // and extruding 50cm
 
 temperatures.forEach((temperature, i) => {
+  const start = { ...positions.prime }
+  start.y = start.y - i * 50
+  const end = { x: start.x, y: start.y - 40, z: start.z, e: 20, f: 17 * 60 }
+
   builder
-    .move({ x: 10, y: 10 })
-    .setTemperature(temperature)
-    .waitForTemperature()
-    // purge a bit of filament to prime
-    .extrude(20, 3 * 60)
+    .speed(speeds.travel)
+    .move(start)
+    .setTemperature({ temperature: temperature, tool: 0 })
+    .waitForTemperature({ tool: 0 })
+    .move(end)
+
+  // prime a bit of filament to prime
+  //.extrude(30, 5 * 60)
 
   rates.forEach((rate, j) => {
     // weight = pi * (1.75/2)^2 * <length cm> * <density cm^3/g>
@@ -44,20 +69,38 @@ temperatures.forEach((temperature, i) => {
 
     // console.log(`EXTRUSION SPEED... rate=${rate} speed=${extrusionSpeed}`)
 
+    // start at the top left of the build and proceed to the bottom left -- we
+    // do this because my fan shroud is on the right, so we can avoid hitting it
+    // when we kiss the build plate
+    const position = {
+      x: 50 * (i + 1),
+      y: 50 * (j + 1),
+      z: 50
+    }
+
     builder
       .comment(`Testing temp=${temperature}, rate=${rate}`)
+      .display(`Testing temp=${temperature}, rate=${rate}`)
       // retract
-      .extrude(-0.8, 35 * 60)
+      .extrude(-0.8, speeds.retraction)
 
       // move to position, we'll put all the same temperatures in a row
-      .move({ x: 20 * j + 10, y: 20 * i + 10, f: 50 * 60 })
+      .speed(speeds.travel)
+      .move(position)
 
       // unretract
-      .extrude(0.8, 35 * 60)
+      .extrude(0.8, speeds.retraction)
 
       // do the actual extrusion
       // TODO(ibash) marlin has a max extrusion limit (EXTRUDE_MAXLENGTH)... does reprap have one too?
-      .extrude(500, extrusionSpeed * 60)
+      //.extrude(500, extrusionSpeed * 60)
+      .extrude(50, extrusionSpeed * 60)
+
+      // kiss the plate to cut off the ooze, we kiss just to the right of the
+      // pile we made, then move back up to help cut the ooze
+      .speed(speeds.travel)
+      .move({ x: position.x + 20, y: position.y, z: 0.2 })
+      .move(position)
   })
 })
 
@@ -78,4 +121,4 @@ M84                       ; disable motors
                           ; end of end code
 `)
 
-fs.writeFileSync('./flow_rate_Test.gcode', builder.build())
+fs.writeFileSync(path.join(__dirname, 'flow_rate_test.gcode'), builder.build())

@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "format": "prettier --write --config ./.prettierrc .",
-    "test": "ava"
+    "test": "ava",
+    "run-example": "ts-node examples/flow_rate_test.ts"
   },
   "ava": {
     "extensions": [
