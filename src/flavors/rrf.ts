@@ -1,16 +1,6 @@
 import { Buildable } from '~/builder'
 
-enum InputShapingType {
-  NONE = 'none',
-  DAA = 'daa'
-}
-
-enum MoveType {
-  TERMINATE = '0',
-  INDIVIDUAL = '1'
-}
-
-export function Rrf<TBase extends Buildable>(Base: TBase) {
+export function Rrf<TBase extends Buildable>(Base: TBase): any {
   return class Rrf extends Base {
     home(params?: { x?: boolean; y?: boolean; z?: boolean }) {
       if (params) {

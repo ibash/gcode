@@ -23,8 +23,8 @@ export interface Position {
 }
 
 export default class Builder {
-  private lines: string[] = []
-  protected config: any
+  config: any
+  lines: string[] = []
 
   constructor(config?: any) {
     // TODO(ibash) strongly type the config
