@@ -84,5 +84,10 @@ export function Rrf<TBase extends Buildable>(Base: TBase) {
       this.out(`M117 "${message}"`)
       return this
     }
+
+    waitForMoves() {
+      this.out('G4 P0')
+      return this
+    }
   }
 }

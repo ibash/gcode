@@ -63,6 +63,9 @@ class CustomBuilder extends Rrf(Builder) {
 
     temperatures.forEach((temperature, i) => {
       this.prime(temperature, i)
+        // extrudePile does a unretract, and then retract, so it expects to be
+        // entered in a retracted state
+        .retract()
 
       rates.forEach((rate, j) => {
         this.comment(`Testing temp=${temperature}, rate=${rate}`)
@@ -101,17 +104,12 @@ class CustomBuilder extends Rrf(Builder) {
     // use mm/s here, we'll convert to mm/min when setting
     const speed = rate / (Math.PI * Math.pow(1.75 / 2, 2))
 
-    // start at the top left of the build and proceed to the bottom left -- we
-    // do this because my fan shroud is on the right, so we can avoid hitting it
-    // when we kiss the build plate
-    const position = {
-      x: 50 * (i + 1),
-      y: 50 * (j + 1),
-      z: 50
-    }
+    // start at the bottom left of the build plate and proceed to the top left
+    // -- we do this because my fan shroud is on the right, so we can avoid
+    // hitting it when we kiss the build plate
+    const position = { x: 50 * (i + 1), y: 50 * (j + 1), z: 50 }
 
     builder
-      .retract()
       .speed(speeds.travel)
       .move(position)
       .unretract()
@@ -120,10 +118,16 @@ class CustomBuilder extends Rrf(Builder) {
       // TODO(ibash) marlin has a max extrusion limit (EXTRUDE_MAXLENGTH)... does reprap have one too?
       //.extrude(500, speed * 60)
       .extrude(50, speed * 60)
+      .extrude(50, speed * 60)
+      //.extrude(50, speed * 60)
+      //.extrude(50, speed * 60)
+      .waitForMoves()
 
       // kiss the plate to cut off the ooze, we kiss just to the right of the
       // pile we made, then move back up to help cut the ooze
+      .retract()
       .kiss(position)
+      .waitForMoves()
   }
 
   kiss(position: Position) {
@@ -135,12 +139,12 @@ class CustomBuilder extends Rrf(Builder) {
   }
 
   retract() {
-    this.extrude(-0.8, this.config.speeds.retraction)
+    this.extrude(-1, this.config.speeds.retraction)
     return this
   }
 
   unretract() {
-    this.extrude(0.8, this.config.speeds.retraction)
+    this.extrude(1, this.config.speeds.retraction)
     return this
   }
 }
