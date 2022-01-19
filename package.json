@@ -1,10 +1,13 @@
 {
-  "name": "gcode",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@ibash/gcode",
+  "version": "1.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "scripts": {
+    "prepublish": "tsc",
     "build": "tsc",
+    "clean": "rm -rf dist",
     "format": "prettier --write --config ./.prettierrc .",
     "test": "ava",
     "run-example": "ts-node examples/flow_rate_test.ts"
